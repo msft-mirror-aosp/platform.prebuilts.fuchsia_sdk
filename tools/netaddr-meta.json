@@ -1,8 +1,0 @@
-{
-  "files": [
-    "tools/netaddr"
-  ], 
-  "name": "netaddr", 
-  "root": "tools", 
-  "type": "host_tool"
-}

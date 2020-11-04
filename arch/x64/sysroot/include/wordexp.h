@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_WORDEXP_H_
+#define SYSROOT_WORDEXP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,9 +19,9 @@ extern "C" {
 #define WRDE_UNDEF 32
 
 typedef struct {
-    size_t we_wordc;
-    char** we_wordv;
-    size_t we_offs;
+  size_t we_wordc;
+  char** we_wordv;
+  size_t we_offs;
 } wordexp_t;
 
 #define WRDE_NOSYS -1
@@ -36,3 +37,5 @@ void wordfree(wordexp_t*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_WORDEXP_H_

@@ -1,10 +1,12 @@
-#pragma once
+#ifndef SYSROOT_STDLIB_H_
+#define SYSROOT_STDLIB_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <features.h>
+
 #include <bits/null.h>
 
 #define __NEED_size_t
@@ -53,9 +55,15 @@ int abs(int);
 long labs(long);
 long long llabs(long long);
 
-typedef struct { int quot, rem; } div_t;
-typedef struct { long quot, rem; } ldiv_t;
-typedef struct { long long quot, rem; } lldiv_t;
+typedef struct {
+  int quot, rem;
+} div_t;
+typedef struct {
+  long quot, rem;
+} ldiv_t;
+typedef struct {
+  long long quot, rem;
+} lldiv_t;
 
 div_t div(int, int);
 ldiv_t ldiv(long, long);
@@ -110,7 +118,6 @@ int posix_openpt(int);
 int grantpt(int);
 int unlockpt(int);
 char* ptsname(int);
-char* l64a(long);
 long a64l(const char*);
 void setkey(const char*);
 double drand48(void);
@@ -146,3 +153,5 @@ char* gcvt(double, int, char*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_STDLIB_H_

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_SYS_WAIT_H_
+#define SYSROOT_SYS_WAIT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,9 +11,7 @@ extern "C" {
 #define __NEED_id_t
 #include <bits/alltypes.h>
 
-typedef enum { P_ALL = 0,
-               P_PID = 1,
-               P_PGID = 2 } idtype_t;
+typedef enum { P_ALL = 0, P_PID = 1, P_PGID = 2 } idtype_t;
 
 pid_t wait(int*);
 pid_t waitpid(pid_t, int*, int);
@@ -43,3 +42,5 @@ int waitid(idtype_t, id_t, siginfo_t*, int);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_SYS_WAIT_H_

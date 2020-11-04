@@ -1,11 +1,11 @@
-#pragma once
+#ifndef SYSROOT_UCONTEXT_H_
+#define SYSROOT_UCONTEXT_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <features.h>
-
 #include <signal.h>
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
@@ -22,3 +22,5 @@ int swapcontext(struct __ucontext*, const struct __ucontext*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_UCONTEXT_H_

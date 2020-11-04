@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_ARPA_TELNET_H_
+#define SYSROOT_ARPA_TELNET_H_
 
 #define IAC 255
 #define DONT 254
@@ -23,10 +24,9 @@
 
 #define SYNCH 242
 
-#define telcmds                                                                        \
-    ((char[][6]){                                                                      \
-        "EOF", "SUSP", "ABORT", "EOR", "SE", "NOP", "DMARK", "BRK", "IP", "AO", "AYT", \
-        "EC", "EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC", 0})
+#define telcmds                                                                                    \
+  ((char[][6]){"EOF", "SUSP", "ABORT", "EOR", "SE",   "NOP",  "DMARK", "BRK",  "IP",  "AO", "AYT", \
+               "EC",  "EL",   "GA",    "SB",  "WILL", "WONT", "DO",    "DONT", "IAC", 0})
 
 #define TELCMD_FIRST xEOF
 #define TELCMD_LAST IAC
@@ -176,9 +176,9 @@ char* telopts[NTELOPTS + 1] = {
 
 #define NSLC 18
 
-#define SLC_NAMELIST                                                                               \
-    "0", "SYNCH", "BRK", "IP", "AO", "AYT", "EOR", "ABORT", "EOF", "SUSP", "EC", "EL", "EW", "RP", \
-        "LNEXT", "XON", "XOFF", "FORW1", "FORW2", 0,
+#define SLC_NAMELIST                                                                             \
+  "0", "SYNCH", "BRK", "IP", "AO", "AYT", "EOR", "ABORT", "EOF", "SUSP", "EC", "EL", "EW", "RP", \
+      "LNEXT", "XON", "XOFF", "FORW1", "FORW2", 0,
 #ifdef SLC_NAMES
 char* slc_names[] = {SLC_NAMELIST};
 #else
@@ -256,11 +256,14 @@ extern char* authtype_names[];
 
 #ifdef ENCRYPT_NAMES
 char* encrypt_names[] = {
-    "IS", "SUPPORT", "REPLY", "START", "END", "REQUEST-START",
+    "IS",          "SUPPORT",   "REPLY",     "START", "END", "REQUEST-START",
     "REQUEST-END", "ENC-KEYID", "DEC-KEYID", 0,
 };
 char* enctype_names[] = {
-    "ANY", "DES_CFB64", "DES_OFB64", 0,
+    "ANY",
+    "DES_CFB64",
+    "DES_OFB64",
+    0,
 };
 #else
 extern char* encrypt_names[];
@@ -272,3 +275,5 @@ extern char* enctype_names[];
 
 #define ENCTYPE_NAME_OK(x) ((unsigned int)(x) < ENCTYPE_CNT)
 #define ENCTYPE_NAME(x) enctype_names[x]
+
+#endif  // SYSROOT_ARPA_TELNET_H_

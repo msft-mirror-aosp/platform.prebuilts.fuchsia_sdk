@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_DLFCN_H_
+#define SYSROOT_DLFCN_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,10 +26,10 @@ void* dlsym(void* __restrict, const char* __restrict);
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 typedef struct {
-    const char* dli_fname;
-    void* dli_fbase;
-    const char* dli_sname;
-    void* dli_saddr;
+  const char* dli_fname;
+  void* dli_fbase;
+  const char* dli_sname;
+  void* dli_saddr;
 } Dl_info;
 int dladdr(const void*, Dl_info*);
 int dlinfo(void*, int, void*);
@@ -37,3 +38,5 @@ int dlinfo(void*, int, void*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_DLFCN_H_

@@ -1,8 +1,0 @@
-{
-  "files": [
-    "tools/netruncmd"
-  ], 
-  "name": "netruncmd", 
-  "root": "tools", 
-  "type": "host_tool"
-}

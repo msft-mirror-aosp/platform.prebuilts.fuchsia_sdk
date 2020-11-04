@@ -1,9 +1,0 @@
-{
-  "file": {
-    "arm64": "target/arm64/fvm.blk", 
-    "x64": "target/x64/fvm.blk"
-  }, 
-  "name": "fvm.blk", 
-  "root": "images", 
-  "type": "image"
-}

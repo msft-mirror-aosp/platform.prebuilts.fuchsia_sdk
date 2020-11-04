@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_SYS_UN_H_
+#define SYSROOT_SYS_UN_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,8 +15,8 @@ extern "C" {
 #include <bits/alltypes.h>
 
 struct sockaddr_un {
-    sa_family_t sun_family;
-    char sun_path[108];
+  sa_family_t sun_family;
+  char sun_path[108];
 };
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
@@ -26,3 +27,5 @@ size_t strlen(const char*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_SYS_UN_H_

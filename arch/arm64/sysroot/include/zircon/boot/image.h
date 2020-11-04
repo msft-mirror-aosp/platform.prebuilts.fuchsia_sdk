@@ -2,11 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef SYSROOT_ZIRCON_BOOT_IMAGE_H_
+#define SYSROOT_ZIRCON_BOOT_IMAGE_H_
+
+// This file contains assembly code that cannot be clang formatted.
+// clang-format off
 
 #ifndef __ASSEMBLER__
 #include <stdint.h>
 #endif
+
 
 // Zircon Boot Image format (ZBI).
 //
@@ -108,6 +113,7 @@ typedef struct {
     macro(ZBI_TYPE_DISCARD, "DISCARD", ".bin") \
     macro(ZBI_TYPE_STORAGE_RAMDISK, "RAMDISK", ".bin") \
     macro(ZBI_TYPE_STORAGE_BOOTFS, "BOOTFS", ".bin") \
+    macro(ZBI_TYPE_STORAGE_BOOTFS_FACTORY, "BOOTFS_FACTORY", ".bin") \
     macro(ZBI_TYPE_CMDLINE, "CMDLINE", ".txt") \
     macro(ZBI_TYPE_CRASHLOG, "CRASHLOG", ".bin") \
     macro(ZBI_TYPE_NVRAM, "NVRAM", ".bin") \
@@ -121,12 +127,17 @@ typedef struct {
     macro(ZBI_TYPE_EFI_MEMORY_MAP, "EFI_MEMORY_MAP", ".bin") \
     macro(ZBI_TYPE_EFI_SYSTEM_TABLE, "EFI_SYSTEM_TABLE", ".bin") \
     macro(ZBI_TYPE_E820_TABLE, "E820_TABLE", ".bin") \
-    macro(ZBI_TYPE_DEBUG_UART, "DEBUG_UART", ".bin") \
     macro(ZBI_TYPE_FRAMEBUFFER, "FRAMEBUFFER", ".bin") \
     macro(ZBI_TYPE_DRV_MAC_ADDRESS, "DRV_MAC_ADDRESS", ".bin") \
     macro(ZBI_TYPE_DRV_PARTITION_MAP, "DRV_PARTITION_MAP", ".bin") \
-    macro(ZBI_TYPE_BOOT_CONFIG, "BOOT_CONFIG", ".bin") \
-    macro(ZBI_TYPE_BOOT_VERSION, "BOOT_VERSION", ".bin")
+    macro(ZBI_TYPE_DRV_BOARD_PRIVATE, "DRV_BOARD_PRIVATE", ".bin") \
+    macro(ZBI_TYPE_DRV_BOARD_INFO, "DRV_BOARD_INFO", ".bin") \
+    macro(ZBI_TYPE_IMAGE_ARGS, "IMAGE_ARGS", ".txt") \
+    macro(ZBI_TYPE_BOOT_VERSION, "BOOT_VERSION", ".bin") \
+    macro(ZBI_TYPE_HW_REBOOT_REASON, "HW_REBOOT_REASON", ".bin") \
+    macro(ZBI_TYPE_SERIAL_NUMBER, "SERIAL_NUMBER", ".txt") \
+    macro(ZBI_TYPE_BOOTLOADER_FILE, "BOOTLOADER_FILE", ".bin") \
+    macro(ZBI_TYPE_DEVICETREE, "DEVICETREE", ".dtb")
 
 // Each ZBI starts with a container header.
 //     length:          Total size of the image after this header.
@@ -197,12 +208,12 @@ typedef struct {
 //     The kernel assumes it was loaded at a fixed physical address of
 //     0x100000 (1MB).  zbi_kernel_t.entry is the absolute physical address
 //     of the PC location where the kernel will start.
-//     TODO(SEC-31): Perhaps this will change??
+//     TODO(fxbug.dev/24762): Perhaps this will change??
 //     The processor is in 64-bit mode with direct virtual to physical
 //     mapping covering the physical memory where the kernel and
-//     bootloader-constructed ZBI were loaded, which must be below 4GB.
-//     The %rsi register (or %esi, since the high 32 bits must be zero)
-//     holds the physical address of the bootloader-constructed ZBI.
+//     bootloader-constructed ZBI were loaded.
+//     The %rsi register holds the physical address of the
+//     bootloader-constructed ZBI.
 //     All other registers are unspecified.
 //
 //  ARM64
@@ -257,12 +268,29 @@ typedef struct {
 // The interpretation of the payload (after possible decompression) is
 // indicated by the specific zbi_header_t.type value.
 //
-// If ZBI_FLAG_STORAGE_COMPRESSED is set in zbi_header_t.flags, then the
-// payload is compressed with LZ4 and zbi_header_t.extra gives the exact
-// size of the decompressed payload.  If ZBI_FLAG_STORAGE_COMPRESSED is
-// not set, then zbi_header_t.extra matches zbi_header_t.length.
+// **Note:** The ZBI_TYPE_STORAGE_* types are not a long-term stable ABI.
+//  - Items of these types are always packed for a specific version of the
+//    kernel and userland boot services, often in the same build that compiles
+//    the kernel.
+//  - These item types are **not** expected to be synthesized or
+//    examined by boot loaders.
+//  - New versions of the `zbi` tool will usually retain the ability to
+//    read old formats and non-default switches to write old formats, for
+//    diagnostic use.
 //
-// TODO(mcgrathr): Document or point to the details of the LZ4 header format.
+// The zbi_header_t.extra field always gives the exact size of the
+// original, uncompressed payload.  That equals zbi_header_t.length when
+// the payload is not compressed.  If ZBI_FLAG_STORAGE_COMPRESSED is set in
+// zbi_header_t.flags, then the payload is compressed.
+//
+// **Note:** Magic-number and header bytes at the start of the compressed
+// payload indicate the compression algorithm and parameters.  The set of
+// compression formats is not a long-term stable ABI.
+//  - Zircon [userboot](../../../../docs/userboot.md) and core services
+//    do the decompression.  A given kernel build's `userboot` will usually
+//    only support one particular compression format.
+//  - The `zbi` tool will usually retain the ability to compress and
+//    decompress for old formats, and can be used to convert between formats.
 #define ZBI_FLAG_STORAGE_COMPRESSED     (0x00000001)
 
 // A virtual disk image.  This is meant to be treated as if it were a
@@ -270,72 +298,14 @@ typedef struct {
 // the storage device, in whatever format that might be.
 #define ZBI_TYPE_STORAGE_RAMDISK        (0x4b534452) // RDSK
 
-// The /boot filesystem in BOOTFS format, specified below.
+// The /boot filesystem in BOOTFS format, specified in <zircon/boot/bootfs.h>.
 // A complete ZBI must have exactly one ZBI_TYPE_STORAGE_BOOTFS item.
 // Zircon [userboot](../../../../docs/userboot.md) handles the contents
 // of this filesystem.
 #define ZBI_TYPE_STORAGE_BOOTFS         (0x42534642) // BFSB
 
-// The payload (after decompression) of an item in BOOTFS format consists
-// of separate "file" images that are each aligned to ZBI_BOOTFS_PAGE_SIZE
-// bytes from the beginning of the item payload.  The first "file" consists
-// of a zbi_bootfs_header_t followed by directory entries.
-#define ZBI_BOOTFS_PAGE_SIZE            (4096u)
-
-#define ZBI_BOOTFS_PAGE_ALIGN(size) \
-    (((size) + ZBI_BOOTFS_PAGE_SIZE - 1) & -ZBI_BOOTFS_PAGE_SIZE)
-
-#ifndef __ASSEMBLER__
-typedef struct {
-    // Must be ZBI_BOOTFS_MAGIC.
-    uint32_t magic;
-
-    // Size in bytes of all the directory entries.
-    // Does not include the size of the zbi_bootfs_header_t.
-    uint32_t dirsize;
-
-    // Reserved for future use.  Set to 0.
-    uint32_t reserved0;
-    uint32_t reserved1;
-} zbi_bootfs_header_t;
-#endif
-
-// LSW of sha256("bootfs")
-#define ZBI_BOOTFS_MAGIC                (0xa56d3ff9)
-
-// Each directory entry holds a pathname and gives the offset and size
-// of the contents of the file by that name.
-#ifndef __ASSEMBLER__
-typedef struct {
-    // Length of the name[] field at the end.  This length includes the
-    // NUL terminator, which must be present, but does not include any
-    // alignment padding required before the next directory entry.
-    uint32_t name_len;
-
-    // Length of the file in bytes.  This is an exact size that is not
-    // rounded, though the file is always padded with zeros up to a
-    // multiple of ZBI_BOOTFS_PAGE_SIZE.
-    uint32_t data_len;
-
-    // Offset from the beginning of the payload (zbi_bootfs_header_t) to
-    // the file's data.  This must be a multiple of ZBI_BOOTFS_PAGE_SIZE.
-    uint32_t data_off;
-
-    // Pathname of the file, a UTF-8 string.  This must include a NUL
-    // terminator at the end.  It must not begin with a '/', but it may
-    // contain '/' separators for subdirectories.
-    char name[];
-} zbi_bootfs_dirent_t;
-#endif
-
-// Each directory entry has a variable size of [16,268] bytes that
-// must be a multiple of 4 bytes.
-#define ZBI_BOOTFS_DIRENT_SIZE(name_len) \
-    ((sizeof(zbi_bootfs_dirent_t) + (name_len) + 3) & -(size_t)4)
-
-// zbi_bootfs_dirent_t.name_len must be > 1 and <= ZBI_BOOTFS_MAX_NAME_LEN.
-#define ZBI_BOOTFS_MAX_NAME_LEN         (256)
-
+// Device-specific factory data, stored in BOOTFS format, specified below.
+#define ZBI_TYPE_STORAGE_BOOTFS_FACTORY (0x46534642) // BFSF
 
 // The remaining types are used to communicate information from the boot
 // loader to the kernel.  Usually these are synthesized in memory by the
@@ -378,6 +348,14 @@ typedef struct {
     uint32_t pid;
     char board_name[ZBI_BOARD_NAME_LEN];
 } zbi_platform_id_t;
+#endif
+
+#define ZBI_TYPE_DRV_BOARD_INFO         (0x4953426D) // mBSI
+// Board-specific information.
+#ifndef __ASSEMBLER__
+typedef struct {
+    uint32_t revision;
+} zbi_board_info_t;
 #endif
 
 // CPU configuration, a zbi_cpu_config_t header followed by one or more
@@ -447,7 +425,9 @@ typedef struct {
 }  zbi_topology_arm_info_t;
 
 typedef struct {
-    uint32_t apic_id;
+    // Indexes here correspond to the logical_ids index for the thread.
+    uint32_t apic_ids[ZBI_MAX_SMT];
+    uint32_t apic_id_count;
 }  zbi_topology_x86_info_t;
 
 typedef struct {
@@ -467,12 +447,31 @@ typedef struct {
 } zbi_topology_processor_t;
 
 typedef struct {
-    // Relative performance level of this processor in the system, with 0
-    // representing the lowest performance.
-    // For example on a two cluster ARM big.LITTLE system 0 would be the little
-    // cores and 1 would represent the big cores.
+    // Relative performance level of this processor in the system. The value is
+    // interpreted as the performance of this processor relative to the maximum
+    // performance processor in the system. No specific values are required for
+    // the performance level, only that the following relationship holds:
+    //
+    //   Pmax is the value of performance_class for the maximum performance
+    //   processor in the system, operating at its maximum operating point.
+    //
+    //   P is the value of performance_class for this processor, operating at
+    //   its maximum operating point.
+    //
+    //   R is the performance ratio of this processor to the maximum performance
+    //   processor in the system in the range (0.0, 1.0].
+    //
+    //   R = (P + 1) / (Pmax + 1)
+    //
+    // If accuracy is limited, choose a conservative value that slightly under-
+    // estimates the performance of lower-performance processors.
     uint8_t performance_class;
 } zbi_topology_cluster_t;
+
+typedef struct {
+    // Unique id of this cache node. No other semantics are assumed.
+    uint32_t cache_id;
+} zbi_topology_cache_t;
 
 typedef struct {
   // Starting and ending memory addresses of this numa region.
@@ -499,6 +498,7 @@ typedef struct {
         zbi_topology_processor_t processor;
         zbi_topology_cluster_t cluster;
         zbi_topology_numa_region_t numa_region;
+        zbi_topology_cache_t cache;
     } entity;
 } zbi_topology_node_t;
 
@@ -544,29 +544,18 @@ typedef struct {
 #define ZIRCON_VENDOR_GUID \
     {0x82305eb2, 0xd39e, 0x4575, {0xa0, 0xc8, 0x6c, 0x20, 0x72, 0xd0, 0x84, 0x4c}}
 #define ZIRCON_CRASHLOG_EFIVAR \
-    { 'c', 'r', 'a', 's', 'h', 'l', 'o', 'g', 0 };
+    { 'c', 'r', 'a', 's', 'h', 'l', 'o', 'g', 0 }
 #define ZIRCON_CRASHLOG_EFIATTR \
     (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS)
-
-// Debug serial port, a zbi_uart_t entry.
-#define ZBI_TYPE_DEBUG_UART             (0x54524155) // UART
-#ifndef __ASSEMBLER__
-typedef struct {
-    uint64_t base;
-    uint32_t type;
-    uint32_t irq;
-} zbi_uart_t;
-#endif
-#define ZBI_UART_NONE                   (0)
-#define ZBI_UART_PC_PORT                (1)
-#define ZBI_UART_PC_MMIO                (2)
 
 // Framebuffer parameters, a zbi_swfb_t entry.
 #define ZBI_TYPE_FRAMEBUFFER            (0x42465753) // SWFB
 
-// A copy of the boot configuration stored as a kvstore
-// within the sysconfig partition.
-#define ZBI_TYPE_BOOT_CONFIG        (0x47464342) // BCFG
+// The image arguments, data is a trivial text format of one "key=value" per line
+// with leading whitespace stripped and "#" comment lines and blank lines ignored.
+// It is processed by bootsvc and parsed args are shared to others via Arguments service.
+// TODO: the format can be streamlined after the /config/devmgr compat support is removed.
+#define ZBI_TYPE_IMAGE_ARGS          (0x47524149) // IARG
 
 // A copy of the boot version stored within the sysconfig
 // partition
@@ -602,6 +591,10 @@ typedef struct {
 #define ZBI_TYPE_DRV_PARTITION_MAP      (0x5452506D) // mPRT
 #define ZBI_PARTITION_NAME_LEN          (32)
 #define ZBI_PARTITION_GUID_LEN          (16)
+
+// Private information for the board driver.
+#define ZBI_TYPE_DRV_BOARD_PRIVATE      (0x524F426D) // mBOR
+
 #ifndef __ASSEMBLER__
 typedef struct {
     // GUID specifying the format and use of data stored in the partition.
@@ -639,3 +632,50 @@ typedef struct {
     zbi_partition_t partitions[];
 } zbi_partition_map_t;
 #endif
+
+
+#define ZBI_TYPE_HW_REBOOT_REASON       (0x42525748) // HWRB
+
+#define ZBI_HW_REBOOT_UNDEFINED         ((uint32_t)0)
+#define ZBI_HW_REBOOT_COLD              ((uint32_t)1)
+#define ZBI_HW_REBOOT_WARM              ((uint32_t)2)
+#define ZBI_HW_REBOOT_BROWNOUT          ((uint32_t)3)
+#define ZBI_HW_REBOOT_WATCHDOG          ((uint32_t)4)
+
+#ifndef __ASSEMBLER__
+#ifndef __cplusplus
+typedef uint32_t zbi_hw_reboot_reason_t;
+#else
+enum class ZbiHwRebootReason : uint32_t {
+    Undefined = ZBI_HW_REBOOT_UNDEFINED,
+    Cold = ZBI_HW_REBOOT_COLD,
+    Warm = ZBI_HW_REBOOT_WARM,
+    Brownout = ZBI_HW_REBOOT_BROWNOUT,
+    Watchdog = ZBI_HW_REBOOT_WATCHDOG,
+};
+using zbi_hw_reboot_reason_t = ZbiHwRebootReason;
+#endif  // __cplusplus
+#endif  // __ASSEMBLER__
+
+// The serial number, an unterminated ASCII string of printable non-whitespace
+// characters with length zbi_header_t.length.
+#define ZBI_TYPE_SERIAL_NUMBER          (0x4e4c5253) // SRLN
+
+// This type specifies a binary file passed in by the bootloader.
+// The first byte specifies the length of the filename without a NUL terminator.
+// The filename starts on the second byte.
+// The file contents are located immediately after the filename.
+//
+// Layout: | name_len |        name       |   payload
+//           ^(1 byte)  ^(name_len bytes)     ^(length of file)
+#define ZBI_TYPE_BOOTLOADER_FILE        (0x4C465442) // BTFL
+
+// The devicetree blob from the legacy boot loader, if any.  This is used only
+// for diagnostic and development purposes.  Zircon kernel and driver
+// configuration is entirely driven by specific ZBI items from the boot
+// loader.  The boot shims for legacy boot loaders pass the raw devicetree
+// along for development purposes, but extract information from it to populate
+// specific ZBI items such as ZBI_TYPE_KERNEL_DRIVER et al.
+#define ZBI_TYPE_DEVICETREE             (0xd00dfeed)
+
+#endif  // SYSROOT_ZIRCON_BOOT_IMAGE_H_

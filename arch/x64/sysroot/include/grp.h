@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_GRP_H_
+#define SYSROOT_GRP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,10 +17,10 @@ extern "C" {
 #include <bits/alltypes.h>
 
 struct group {
-    char* gr_name;
-    char* gr_passwd;
-    gid_t gr_gid;
-    char** gr_mem;
+  char* gr_name;
+  char* gr_passwd;
+  gid_t gr_gid;
+  char** gr_mem;
 };
 
 struct group* getgrgid(gid_t);
@@ -46,3 +47,5 @@ int initgroups(const char*, gid_t);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_GRP_H_

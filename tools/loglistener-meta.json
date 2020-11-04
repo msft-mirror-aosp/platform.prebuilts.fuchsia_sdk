@@ -1,8 +1,0 @@
-{
-  "files": [
-    "tools/loglistener"
-  ], 
-  "name": "loglistener", 
-  "root": "tools", 
-  "type": "host_tool"
-}
