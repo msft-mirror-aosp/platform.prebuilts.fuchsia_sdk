@@ -2,20 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ZIRCON_FIDL_H_
-#define ZIRCON_FIDL_H_
+#ifndef SYSROOT_ZIRCON_FIDL_H_
+#define SYSROOT_ZIRCON_FIDL_H_
 
-#include <assert.h>
-#include <stdalign.h>
-#include <stdint.h>
-
+#include <assert.h>    // NOLINT(modernize-deprecated-headers, foobar)
+#include <stdalign.h>  // NOLINT(modernize-deprecated-headers)
+#include <stdint.h>    // NOLINT(modernize-*)
 #include <zircon/compiler.h>
 #include <zircon/types.h>
 
 __BEGIN_CDECLS
 
 // Fidl data types have a representation in a wire format. This wire
-// format is shared by all language bindings, including C11 and C++14.
+// format is shared by all language bindings, including C11 and C++.
 //
 // The C bindings also define a representation of fidl data types. For
 // a given type, the size and alignment of all parts of the type agree
@@ -55,12 +54,21 @@ __BEGIN_CDECLS
 #define FIDL_ALLOC_ABSENT ((uintptr_t)0)
 
 // Out of line allocations are all 8 byte aligned.
+// TODO(fxbug.dev/42792): Remove either this FIDL_ALIGN macro or the FidlAlign function in
+// fidl/internal.h.
 #define FIDL_ALIGNMENT ((size_t)8)
-#define FIDL_ALIGN(a) (((a) + 7) & ~7)
+#define FIDL_ALIGN(a) (((a) + 7u) & ~7u)
 #define FIDL_ALIGNDECL alignas(FIDL_ALIGNMENT)
 
-// An opaque struct representing the encoding of a particular fidl
-// type.
+// The maximum depth of out-of-line objects in the wire format.
+// 0 is the initial depth, 1 is the first out of line object, etc.
+// Tables count as two depth levels because the vector body and the
+// table elements are both out of line.
+#define FIDL_MAX_DEPTH 32
+
+// An opaque struct containing metadata for encoding a particular fidl
+// type. The actual length of the struct is different depending on the
+// kind of fidl type it is describing.
 typedef struct fidl_type fidl_type_t;
 
 // Primitive types.
@@ -119,11 +127,11 @@ typedef struct fidl_type fidl_type_t;
 // but is checked as part of validation.
 
 typedef struct fidl_string {
-    // Number of UTF-8 code units (bytes), must be 0 if |data| is null.
-    uint64_t size;
+  // Number of UTF-8 code units (bytes), must be 0 if |data| is null.
+  uint64_t size;
 
-    // Pointer to UTF-8 code units (bytes) or null
-    char* data;
+  // Pointer to UTF-8 code units (bytes) or null
+  char* data;
 } fidl_string_t;
 
 // When encoded, an absent nullable string is represented as a
@@ -169,11 +177,11 @@ typedef struct fidl_string {
 // but is checked as part of validation.
 
 typedef struct fidl_vector {
-    // Number of elements, must be 0 if |data| is null.
-    uint64_t count;
+  // Number of elements, must be 0 if |data| is null.
+  uint64_t count;
 
-    // Pointer to element data or null.
-    void* data;
+  // Pointer to element data or null.
+  void* data;
 } fidl_vector_t;
 
 // When encoded, an absent nullable vector is represented as a
@@ -192,6 +200,42 @@ typedef struct fidl_vector {
 // vector<T>?    fidl_vector_t  An optional vector of T, of arbitrary length.
 // vector<T>:N   fidl_vector_t  A vector of T, up to N elements.
 // vector<T>:N?  fidl_vector_t  An optional vector of T,  up to N elements.
+
+// Envelope.
+
+// An efficient way to encapsulate uninterpreted FIDL messages.
+// - Stores a variable size uninterpreted payload out-of-line.
+// - Payload may contain an arbitrary number of bytes and handles.
+// - Allows for encapsulation of one FIDL message inside of another.
+// - Building block for extensible structures such as tables & extensible
+//   unions.
+
+// When encoded for transfer, |data| indicates presence of content:
+// - FIDL_ALLOC_ABSENT : envelope is null
+// - FIDL_ALLOC_PRESENT : envelope is non-null, |data| is the next out-of-line object
+// When decoded for consumption, |data| is a pointer to content.
+// - nullptr : envelope is null
+// - <valid pointer> : envelope is non-null, |data| is at indicated memory address
+
+typedef struct {
+  // The size of the entire envelope contents, including any additional
+  // out-of-line objects that the envelope may contain. For example, a
+  // vector<string>'s num_bytes for ["hello", "world"] would include the
+  // string contents in the size, not just the outer vector. Always a multiple
+  // of 8; must be zero if envelope is null.
+  uint32_t num_bytes;
+
+  // The number of handles in the envelope, including any additional
+  // out-of-line objects that the envelope contains. Must be zero if envelope is null.
+  uint32_t num_handles;
+
+  // A pointer to the out-of-line envelope data in decoded form, or
+  // FIDL_ALLOC_(ABSENT|PRESENT) in encoded form.
+  union {
+    void* data;
+    uintptr_t presence;
+  };
+} fidl_envelope_t;
 
 // Handle types.
 
@@ -278,16 +322,53 @@ typedef uint32_t fidl_union_tag_t;
 //                                                   union_foo, or else
 //                                                   FIDL_ALLOC_ABSENT.
 
+// Tables.
+
+// Tables are 'flexible structs', where all members are optional, and new
+// members can be added, or old members removed while preserving ABI
+// compatibility. Each table member is referenced by ordinal, sequentially
+// assigned from 1 onward, with no gaps. Each member content is stored
+// out-of-line in an envelope, and a table is simply a vector of these envelopes
+// with the requirement that the last envelope must be present in order
+// to guarantee a canonical representation.
+
+typedef struct {
+  fidl_vector_t envelopes;
+} fidl_table_t;
+
+// Extensible unions.
+
+// Extensible unions, or "xunions" (colloquially pronounced "zoo-nions") are
+// similar to unions, except that storage for union members are out-of-line
+// rather than inline. This enables union members to be added and removed while
+// preserving ABI compatibility with the existing xunion definition.
+
+typedef uint64_t fidl_xunion_tag_t;
+
+enum {
+  kFidlXUnionEmptyTag = 0,  // The tag representing an empty xunion.
+};
+
+typedef struct {
+  fidl_xunion_tag_t tag;
+  fidl_envelope_t envelope;
+} fidl_xunion_t;
+
 // Messages.
 
 // All fidl messages share a common 16 byte header.
 
+enum {
+  kFidlWireFormatMagicNumberInitial = 1,
+};
+
 typedef struct fidl_message_header {
-    zx_txid_t txid;
-    // This reserved word is used by Epitaphs to represent an error value.
-    uint32_t reserved0;
-    uint32_t flags;
-    uint32_t ordinal;
+  zx_txid_t txid;
+  uint8_t flags[3];
+  // This value indicates the message's wire format. Two sides with different
+  // wire formats are incompatible with each other
+  uint8_t magic_number;
+  uint64_t ordinal;
 } fidl_message_header_t;
 
 // Messages which do not have a response use zero as a special
@@ -295,46 +376,65 @@ typedef struct fidl_message_header {
 
 #define FIDL_TXID_NO_RESPONSE 0ul
 
-// The system reserves the high half of the ordinal space.
+// An outgoing FIDL message.
+typedef struct fidl_outgoing_msg {
+  // The bytes of the message.
+  //
+  // The bytes of the message might be in the encoded or decoded form.
+  // Functions that take a |fidl_outgoing_msg_t| as an argument should document whether
+  // the expect encoded or decoded messages.
+  //
+  // See |num_bytes| for the number of bytes in the message.
+  void* bytes;
 
-#define FIDL_ORD_SYSTEM_MASK 0x80000000ul
+  // The handles of the message.
+  //
+  // See |num_bytes| for the number of bytes in the message.
+  zx_handle_t* handles;
 
-// A FIDL message.
-typedef struct fidl_msg {
-    // The bytes of the message.
-    //
-    // The bytes of the message might be in the encoded or decoded form.
-    // Functions that take a |fidl_msg_t| as an argument should document whether
-    // the expect encoded or decoded messages.
-    //
-    // See |num_bytes| for the number of bytes in the message.
-    void* bytes;
+  // The number of bytes in |bytes|.
+  uint32_t num_bytes;
 
-    // The handles of the message.
-    //
-    // See |num_bytes| for the number of bytes in the message.
-    zx_handle_t* handles;
+  // The number of handles in |handles|.
+  uint32_t num_handles;
+} fidl_outgoing_msg_t;
 
-    // The number of bytes in |bytes|.
-    uint32_t num_bytes;
+// An incoming FIDL message.
+typedef struct fidl_incoming_msg {
+  // The bytes of the message.
+  //
+  // The bytes of the message might be in the encoded or decoded form.
+  // Functions that take a |fidl_incoming_msg_t| as an argument should document whether
+  // the expect encoded or decoded messages.
+  //
+  // See |num_bytes| for the number of bytes in the message.
+  void* bytes;
 
-    // The number of handles in |handles|.
-    uint32_t num_handles;
-} fidl_msg_t;
+  // The handles of the message.
+  //
+  // See |num_bytes| for the number of bytes in the message.
+  zx_handle_t* handles;
+
+  // The number of bytes in |bytes|.
+  uint32_t num_bytes;
+
+  // The number of handles in |handles|.
+  uint32_t num_handles;
+} fidl_incoming_msg_t;
 
 // An outstanding FIDL transaction.
 typedef struct fidl_txn fidl_txn_t;
 struct fidl_txn {
-    // Replies to the outstanding request and complete the FIDL transaction.
-    //
-    // Pass the |fidl_txn_t| object itself as the first parameter. The |msg|
-    // should already be encoded. This function always consumes any handles
-    // present in |msg|.
-    //
-    // Call |reply| only once for each |txn| object. After |reply| returns, the
-    // |txn| object is considered invalid and might have been freed or reused
-    // for another purpose.
-    zx_status_t (*reply)(fidl_txn_t* txn, const fidl_msg_t* msg);
+  // Replies to the outstanding request and complete the FIDL transaction.
+  //
+  // Pass the |fidl_txn_t| object itself as the first parameter. The |msg|
+  // should already be encoded. This function always consumes any handles
+  // present in |msg|.
+  //
+  // Call |reply| only once for each |txn| object. After |reply| returns, the
+  // |txn| object is considered invalid and might have been freed or reused
+  // for another purpose.
+  zx_status_t (*reply)(fidl_txn_t* txn, const fidl_outgoing_msg_t* msg);
 };
 
 // An epitaph is a message that a server sends just prior to closing the
@@ -342,17 +442,22 @@ struct fidl_txn {
 // Epitaphs are defined in the FIDL wire format specification.  Once sent down
 // the wire, the channel should be closed.
 typedef struct fidl_epitaph {
-    FIDL_ALIGNDECL
+  FIDL_ALIGNDECL
 
-    // The error associated with this epitaph is stored in the reserved word of
-    // the message header.  System errors must be constants of type zx_status_t,
-    // which are all negative.  Positive numbers should be used for application
-    // errors.  A value of ZX_OK indicates no error.
-    fidl_message_header_t hdr;
+  // The method ordinal for all epitaphs must be kFidlOrdinalEpitaph
+  fidl_message_header_t hdr;
+
+  // The error associated with this epitaph is stored as a struct{int32} in
+  // the message payload. System errors must be constants of type zx_status_t,
+  // which are all negative. Positive numbers should be used for application
+  // errors. A value of ZX_OK indicates no error.
+  zx_status_t error;
 } fidl_epitaph_t;
 
 // This ordinal value is reserved for Epitaphs.
-#define FIDL_EPITAPH_ORDINAL 0xFFFFFFFF
+enum {
+  kFidlOrdinalEpitaph = 0xFFFFFFFFFFFFFFFF,
+};
 
 // Assumptions.
 
@@ -374,4 +479,4 @@ static_assert(alignof(fidl_message_header_t) <= FIDL_ALIGNMENT, "");
 
 __END_CDECLS
 
-#endif // ZIRCON_FIDL_H_
+#endif  // SYSROOT_ZIRCON_FIDL_H_

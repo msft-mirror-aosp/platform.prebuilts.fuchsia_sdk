@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_SYS_STAT_H_
+#define SYSROOT_SYS_STAT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +20,6 @@ extern "C" {
 #define __NEED_struct_timespec
 
 #include <bits/alltypes.h>
-
 #include <bits/stat.h>
 
 #define st_atime st_atim.tv_sec
@@ -98,3 +98,5 @@ int lchmod(const char*, mode_t);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_SYS_STAT_H_

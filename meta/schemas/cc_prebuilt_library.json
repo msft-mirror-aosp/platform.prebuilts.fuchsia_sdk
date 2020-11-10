@@ -1,4 +1,6 @@
 {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://fuchsia.com/schemas/sdk/cc_prebuilt_library.json",
   "description": "A prebuilt C/C++ library",
   "type": "object",
   "allOf": [
@@ -8,15 +10,24 @@
     {
       "properties": {
         "type": {
-          "description": "Marker for this type of element",
-          "type": "string",
-          "enum": [
-            "cc_prebuilt_library"
+          "allOf": [
+            {
+              "$ref": "common.json#/definitions/type"
+            },
+            {
+              "enum": [
+                "cc_prebuilt_library"
+              ]
+            }
           ]
         },
         "name": {
           "description": "Name of the library",
           "$ref": "common.json#/definitions/cc_library_name"
+        },
+        "root": {
+          "description": "The root of the element in the SDK",
+          "type": "string"
         },
         "format": {
           "description": "The distribution format of the binaries",
@@ -41,7 +52,7 @@
           "description": "List of C/C++ libraries this library depends on",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/package_name"
+            "$ref": "common.json#/definitions/cc_library_name"
           }
         },
         "binaries": {
@@ -67,9 +78,13 @@
         "deps",
         "format",
         "headers",
+        "include_dir",
+        "root",
+
         "name",
         "type"
-      ]
+      ],
+      "additionalProperties": false
     }
   ],
   "definitions": {
@@ -83,6 +98,10 @@
         },
         "dist": {
           "description": "The version of the library to add to Fuchsia packages",
+          "$ref": "common.json#/definitions/file"
+        },
+        "dist_path": {
+          "description": "Path where the library should be installed in Fuchsia packages",
           "$ref": "common.json#/definitions/file"
         },
         "debug": {

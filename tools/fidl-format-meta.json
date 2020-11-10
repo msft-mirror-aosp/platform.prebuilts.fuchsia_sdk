@@ -1,8 +1,0 @@
-{
-  "files": [
-    "tools/fidl-format"
-  ], 
-  "name": "fidl-format", 
-  "root": "tools", 
-  "type": "host_tool"
-}

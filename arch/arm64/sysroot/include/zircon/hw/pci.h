@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ZIRCON_HW_PCI_H_
-#define ZIRCON_HW_PCI_H_
+#ifndef SYSROOT_ZIRCON_HW_PCI_H_
+#define SYSROOT_ZIRCON_HW_PCI_H_
 
 #include <stdint.h>
 #include <zircon/compiler.h>
 
-__BEGIN_CDECLS;
+__BEGIN_CDECLS
 
 // Structure for passing around PCI address information
 typedef struct pci_bdf {
-    uint8_t bus_id;
-    uint8_t device_id;
-    uint8_t function_id;
+  uint8_t bus_id;
+  uint8_t device_id;
+  uint8_t function_id;
 } pci_bdf_t;
 
 // TODO(cja): This header is used for the transition of these defines from
@@ -43,8 +43,8 @@ typedef struct pci_bdf {
 
 #define PCI_INVALID_VENDOR_ID (0xFFFF)
 
-#endif // WITH_KERNEL_PCIE
+#endif  // WITH_KERNEL_PCIE
 
-__END_CDECLS;
+__END_CDECLS
 
-#endif // ZIRCON_HW_PCI_H_
+#endif  // SYSROOT_ZIRCON_HW_PCI_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef SYSROOT_ZIRCON_THREADS_H_
+#define SYSROOT_ZIRCON_THREADS_H_
 
 #include <threads.h>
 #include <zircon/compiler.h>
@@ -19,19 +20,37 @@ zx_handle_t thrd_get_zx_handle(thrd_t t);
 
 // Converts a threads.h-style status value to an |zx_status_t|.
 static inline zx_status_t __PURE thrd_status_to_zx_status(int thrd_status) {
-    switch (thrd_status) {
+  switch (thrd_status) {
     case thrd_success:
-        return ZX_OK;
+      return ZX_OK;
     case thrd_nomem:
-        return ZX_ERR_NO_MEMORY;
+      return ZX_ERR_NO_MEMORY;
     case thrd_timedout:
-        return ZX_ERR_TIMED_OUT;
+      return ZX_ERR_TIMED_OUT;
     case thrd_busy:
-        return ZX_ERR_SHOULD_WAIT;
+      return ZX_ERR_SHOULD_WAIT;
     default:
     case thrd_error:
-        return ZX_ERR_INTERNAL;
-    }
+      return ZX_ERR_INTERNAL;
+  }
 }
 
 __END_CDECLS
+
+#ifdef __cplusplus
+
+#if __has_include(<thread>)
+
+#include <thread>
+
+// Get the zx_handle_t corresponding to the std::thread::native_handle() value.
+// See `thrd_get_zx_handle` (above) for constraints on the returned handle.
+// Using this API avoids any assumptions about std::thread::native_handle_type
+// corresponding exactly to thrd_t or any other particular type.
+zx_handle_t native_thread_get_zx_handle(std::thread::native_handle_type);
+
+#endif  // __has_include(<thread>)
+
+#endif  // __cplusplus
+
+#endif  // SYSROOT_ZIRCON_THREADS_H_

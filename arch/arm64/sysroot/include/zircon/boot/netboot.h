@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef SYSROOT_ZIRCON_BOOT_NETBOOT_H_
+#define SYSROOT_ZIRCON_BOOT_NETBOOT_H_
 
 #include <stddef.h>
 #include <stdint.h>
+#include <zircon/types.h>
 
 // clang-format off
 
-#define BOOTLOADER_VERSION "0.7.13"
+#define BOOTLOADER_VERSION "0.7.22"
 
 #define NB_MAGIC              0xAA774217
 #define NB_DEBUGLOG_MAGIC     0xAEAE1123
@@ -34,6 +36,7 @@
 #define NB_CLOSE             10  // arg=0
 #define NB_LAST_DATA         11  // arg=offset, data=data
 #define NB_REBOOT            12  // arg=0
+#define NB_GET_ADVERT        13  // arg=0
 
 #define NB_ACK                0 // arg=0 or -err, NB_READ: data=data
 #define NB_FILE_RECEIVED      0x70000001 // arg=size
@@ -62,10 +65,17 @@
 #define NB_FVM_FILENAME NB_IMAGE_PREFIX NB_FVM_HOST_FILENAME
 #define NB_BOOTLOADER_HOST_FILENAME "bootloader.img"
 #define NB_BOOTLOADER_FILENAME NB_IMAGE_PREFIX NB_BOOTLOADER_HOST_FILENAME
-#define NB_EFI_HOST_FILENAME "efi.img"
-#define NB_EFI_FILENAME NB_IMAGE_PREFIX NB_EFI_HOST_FILENAME
-#define NB_KERNC_HOST_FILENAME "kernc.img"
-#define NB_KERNC_FILENAME NB_IMAGE_PREFIX NB_KERNC_HOST_FILENAME
+// Firmware images are slightly different, as they have an optional type suffix:
+//   firmware_     <- type = "" (the default)
+//   firmware_foo  <- type = "foo"
+#define NB_FIRMWARE_HOST_FILENAME_PREFIX "firmware_"
+#define NB_FIRMWARE_FILENAME_PREFIX NB_IMAGE_PREFIX NB_FIRMWARE_HOST_FILENAME_PREFIX
+#define NB_FIRMWAREA_HOST_FILENAME_PREFIX "firmwarea_"
+#define NB_FIRMWAREA_FILENAME_PREFIX NB_IMAGE_PREFIX NB_FIRMWAREA_HOST_FILENAME_PREFIX
+#define NB_FIRMWAREB_HOST_FILENAME_PREFIX "firmwareb_"
+#define NB_FIRMWAREB_FILENAME_PREFIX NB_IMAGE_PREFIX NB_FIRMWAREB_HOST_FILENAME_PREFIX
+#define NB_FIRMWARER_HOST_FILENAME_PREFIX "firmwarer_"
+#define NB_FIRMWARER_FILENAME_PREFIX NB_IMAGE_PREFIX NB_FIRMWARER_HOST_FILENAME_PREFIX
 #define NB_ZIRCONA_HOST_FILENAME "zircona.img"
 #define NB_ZIRCONA_FILENAME NB_IMAGE_PREFIX NB_ZIRCONA_HOST_FILENAME
 #define NB_ZIRCONB_HOST_FILENAME "zirconb.img"
@@ -76,8 +86,36 @@
 #define NB_VBMETAA_FILENAME NB_IMAGE_PREFIX NB_VBMETAA_HOST_FILENAME
 #define NB_VBMETAB_HOST_FILENAME "vbmetab.img"
 #define NB_VBMETAB_FILENAME NB_IMAGE_PREFIX NB_VBMETAB_HOST_FILENAME
+#define NB_VBMETAR_HOST_FILENAME "vbmetar.img"
+#define NB_VBMETAR_FILENAME NB_IMAGE_PREFIX NB_VBMETAR_HOST_FILENAME
 #define NB_SSHAUTH_HOST_FILENAME "authorized_keys"
 #define NB_SSHAUTH_FILENAME NB_IMAGE_PREFIX NB_SSHAUTH_HOST_FILENAME
+#define NB_BOARD_NAME_HOST_FILENAME "board_name"
+#define NB_BOARD_NAME_FILENAME NB_IMAGE_PREFIX NB_BOARD_NAME_HOST_FILENAME
+#define NB_BOARD_REVISION_HOST_FILENAME "board_revision"
+#define NB_BOARD_REVISION_FILENAME NB_IMAGE_PREFIX NB_BOARD_REVISION_HOST_FILENAME
+#define NB_BOARD_INFO_HOST_FILENAME "board_info"
+#define NB_BOARD_INFO_FILENAME NB_IMAGE_PREFIX NB_BOARD_INFO_HOST_FILENAME
+#define NB_INIT_PARTITION_TABLES_HOST_FILENAME "init_partition_tables"
+#define NB_INIT_PARTITION_TABLES_FILENAME NB_IMAGE_PREFIX NB_INIT_PARTITION_TABLES_HOST_FILENAME
+#define NB_WIPE_PARTITION_TABLES_HOST_FILENAME "wipe_partition_tables"
+#define NB_WIPE_PARTITION_TABLES_FILENAME NB_IMAGE_PREFIX NB_WIPE_PARTITION_TABLES_HOST_FILENAME
+
+// Should match paver FIDL definition.
+// Length does not include the '\0' terminator, so when allocating a character
+// buffer to hold the type use (NB_FIRMWARE_TYPE_MAX_LENGTH  + 1).
+#define NB_FIRMWARE_TYPE_MAX_LENGTH 256
+
+typedef struct board_info {
+  char board_name[ZX_MAX_NAME_LEN];
+  uint32_t board_revision;
+  uint8_t mac_address[8];
+} board_info_t;
+
+typedef struct modify_partition_table_info {
+  // Path of block device to initialize or wipe.
+  char block_device_path[ZX_MAX_NAME_LEN + 1];
+} modify_partition_table_info_t;
 
 typedef struct nbmsg_t {
     uint32_t magic;
@@ -114,3 +152,5 @@ typedef struct logpacket {
     char nodename[MAX_NODENAME_LENGTH];
     char data[MAX_LOG_DATA];
 } logpacket_t;
+
+#endif  // SYSROOT_ZIRCON_BOOT_NETBOOT_H_

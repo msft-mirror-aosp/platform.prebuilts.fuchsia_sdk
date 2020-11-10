@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_SEMAPHORE_H_
+#define SYSROOT_SEMAPHORE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,9 +10,9 @@ extern "C" {
 #define __NEED_sem_t
 #define __NEED_time_t
 #define __NEED_struct_timespec
-#include <bits/alltypes.h>
-
 #include <fcntl.h>
+
+#include <bits/alltypes.h>
 
 #define SEM_FAILED ((sem_t*)0)
 
@@ -29,3 +30,5 @@ int sem_wait(sem_t*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_SEMAPHORE_H_

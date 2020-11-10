@@ -2,21 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
-
-#include <zircon/types.h>
-#include <zircon/listnode.h>
-#include <zircon/compiler.h>
+#ifndef LIB_FDIO_INCLUDE_LIB_FDIO_VFS_H_
+#define LIB_FDIO_INCLUDE_LIB_FDIO_VFS_H_
 
 #include <stdio.h>
 #include <unistd.h>  // ssize_t
+#include <zircon/compiler.h>
+#include <zircon/listnode.h>
+#include <zircon/processargs.h>
+#include <zircon/types.h>
 
 __BEGIN_CDECLS
 
 // On Fuchsia, the Block Device is transmitted by file descriptor, rather than
 // by path. This can prevent some racy behavior relating to FS start-up.
 #ifdef __Fuchsia__
-#define FS_FD_BLOCKDEVICE 200
+#define FS_HANDLE_ROOT_ID PA_HND(PA_USER0, 0)
+#define FS_HANDLE_BLOCK_DEVICE_ID PA_HND(PA_USER0, 1)
 #endif
 
 // POSIX defines st_blocks to be the number of 512 byte blocks allocated
@@ -27,21 +29,21 @@ __BEGIN_CDECLS
 #define VNATTR_BLKSIZE 512
 
 typedef struct vnattr {
-    uint32_t valid;        // mask of which bits to set for setattr
-    uint32_t mode;
-    uint64_t inode;
-    uint64_t size;
-    uint64_t blksize;      // Block size for filesystem I/O
-    uint64_t blkcount;     // Number of VNATTR_BLKSIZE byte blocks allocated
-    uint64_t nlink;
-    uint64_t create_time;  // posix time (seconds since epoch)
-    uint64_t modify_time;  // posix time
+  uint32_t valid;  // mask of which bits to set for setattr
+  uint32_t mode;
+  uint64_t inode;
+  uint64_t size;
+  uint64_t blksize;   // Block size for filesystem I/O
+  uint64_t blkcount;  // Number of VNATTR_BLKSIZE byte blocks allocated
+  uint64_t nlink;
+  uint64_t create_time;  // posix time (seconds since epoch)
+  uint64_t modify_time;  // posix time
 } vnattr_t;
 
 // mask that identifies what fields to set in setattr
-#define ATTR_CTIME  0000001
-#define ATTR_MTIME  0000002
-#define ATTR_ATIME  0000004  // not yet implemented
+#define ATTR_CTIME 0000001
+#define ATTR_MTIME 0000002
+#define ATTR_ATIME 0000004  // not yet implemented
 
 // bits compatible with POSIX stat
 #define V_TYPE_MASK 0170000
@@ -49,7 +51,7 @@ typedef struct vnattr {
 #define V_TYPE_LINK 0120000
 #define V_TYPE_FILE 0100000
 #define V_TYPE_BDEV 0060000
-#define V_TYPE_DIR  0040000
+#define V_TYPE_DIR 0040000
 #define V_TYPE_CDEV 0020000
 #define V_TYPE_PIPE 0010000
 
@@ -73,10 +75,12 @@ typedef struct vnattr {
 #define DTYPE_TO_VTYPE(type) (((type)&15) << 12)
 
 typedef struct vdirent {
-    uint64_t ino;
-    uint8_t size;
-    uint8_t type;
-    char name[0];
+  uint64_t ino;
+  uint8_t size;
+  uint8_t type;
+  char name[0];
 } __PACKED vdirent_t;
 
 __END_CDECLS
+
+#endif  // LIB_FDIO_INCLUDE_LIB_FDIO_VFS_H_

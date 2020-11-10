@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_REGEX_H_
+#define SYSROOT_REGEX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,15 +13,15 @@ extern "C" {
 #include <bits/alltypes.h>
 
 typedef struct re_pattern_buffer {
-    size_t re_nsub;
-    void *__opaque, *__padding[4];
-    size_t __nsub2;
-    char __padding2;
+  size_t re_nsub;
+  void *__opaque, *__padding[4];
+  size_t __nsub2;
+  char __padding2;
 } regex_t;
 
 typedef struct {
-    regoff_t rm_so;
-    regoff_t rm_eo;
+  regoff_t rm_so;
+  regoff_t rm_eo;
 } regmatch_t;
 
 #define REG_EXTENDED 1
@@ -57,3 +58,5 @@ size_t regerror(int, const regex_t* __restrict, char* __restrict, size_t);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_REGEX_H_
