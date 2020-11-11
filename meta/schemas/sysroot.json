@@ -1,4 +1,6 @@
 {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://fuchsia.com/schemas/sdk/sysroot.json",
   "description": "The sysroot",
   "type": "object",
   "allOf": [
@@ -8,10 +10,15 @@
     {
       "properties": {
         "type": {
-          "description": "Marker for this type of element",
-          "type": "string",
-          "enum": [
-            "sysroot"
+          "allOf": [
+            {
+              "$ref": "common.json#/definitions/type"
+            },
+            {
+              "enum": [
+                "sysroot"
+              ]
+            }
           ]
         },
         "name": {
@@ -40,10 +47,12 @@
         }
       },
       "required": [
+        "versions",
+
         "name",
-        "type",
-        "versions"
-      ]
+        "type"
+      ],
+      "additionalProperties": false
     }
   ],
   "definitions": {
@@ -61,6 +70,10 @@
           "items": {
             "$ref": "common.json#/definitions/file"
           }
+        },
+        "dist_dir": {
+          "description": "Path to the base directory for prebuilt libraries",
+          "$ref": "common.json#/definitions/file"
         },
         "include_dir": {
           "description": "Path to the base directory for includes",
@@ -94,8 +107,10 @@
         "include_dir",
         "link_libs",
         "dist_libs",
-        "debug_libs"
-      ]
+        "debug_libs",
+        "dist_dir"
+      ],
+      "additionalProperties": false
     }
   }
 }

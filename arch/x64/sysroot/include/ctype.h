@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_CTYPE_H_
+#define SYSROOT_CTYPE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,9 +23,7 @@ int tolower(int);
 int toupper(int);
 
 #ifndef __cplusplus
-static __inline int __isspace(int _c) {
-    return _c == ' ' || (unsigned)_c - '\t' < 5;
-}
+static __inline int __isspace(int _c) { return _c == ' ' || (unsigned)_c - '\t' < 5; }
 
 #define isalpha(a) (0 ? isalpha(a) : (((unsigned)(a) | 32) - 'a') < 26)
 #define isdigit(a) (0 ? isdigit(a) : ((unsigned)(a) - '0') < 10)
@@ -49,3 +48,5 @@ int toascii(int);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_CTYPE_H_

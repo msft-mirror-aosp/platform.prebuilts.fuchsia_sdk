@@ -1,21 +1,22 @@
-#pragma once
+#ifndef SYSROOT_NETPACKET_PACKET_H_
+#define SYSROOT_NETPACKET_PACKET_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct sockaddr_ll {
-    unsigned short sll_family, sll_protocol;
-    int sll_ifindex;
-    unsigned short sll_hatype;
-    unsigned char sll_pkttype, sll_halen;
-    unsigned char sll_addr[8];
+  unsigned short sll_family, sll_protocol;
+  int sll_ifindex;
+  unsigned short sll_hatype;
+  unsigned char sll_pkttype, sll_halen;
+  unsigned char sll_addr[8];
 };
 
 struct packet_mreq {
-    int mr_ifindex;
-    unsigned short int mr_type, mr_alen;
-    unsigned char mr_address[8];
+  int mr_ifindex;
+  unsigned short int mr_type, mr_alen;
+  unsigned char mr_address[8];
 };
 
 #define PACKET_HOST 0
@@ -56,3 +57,5 @@ struct packet_mreq {
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_NETPACKET_PACKET_H_

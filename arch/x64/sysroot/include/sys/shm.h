@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_SYS_SHM_H_
+#define SYSROOT_SYS_SHM_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,9 +11,9 @@ extern "C" {
 #define __NEED_size_t
 #define __NEED_pid_t
 
-#include <bits/alltypes.h>
-
 #include <sys/ipc.h>
+
+#include <bits/alltypes.h>
 
 #ifdef _GNU_SOURCE
 #define __used_ids used_ids
@@ -49,3 +50,5 @@ int shmget(key_t, size_t, int);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_SYS_SHM_H_

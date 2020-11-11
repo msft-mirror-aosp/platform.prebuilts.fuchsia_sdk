@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ZIRCON_PIXELFORMAT_H_
-#define ZIRCON_PIXELFORMAT_H_
+#ifndef SYSROOT_ZIRCON_PIXELFORMAT_H_
+#define SYSROOT_ZIRCON_PIXELFORMAT_H_
 
 #include <stdint.h>
 
@@ -20,7 +20,9 @@ typedef uint32_t zx_pixel_format_t;
 #define ZX_PIXEL_FORMAT_MONO_8     ((zx_pixel_format_t)0x00010007)
 #define ZX_PIXEL_FORMAT_GRAY_8     ((zx_pixel_format_t)0x00010007)
 #define ZX_PIXEL_FORMAT_NV12       ((zx_pixel_format_t)0x00010008)
-
+#define ZX_PIXEL_FORMAT_RGB_888    ((zx_pixel_format_t)0x00030009)
+#define ZX_PIXEL_FORMAT_ABGR_8888  ((zx_pixel_format_t)0x0004000a)
+#define ZX_PIXEL_FORMAT_BGR_888x   ((zx_pixel_format_t)0x0004000b)
 #define ZX_PIXEL_FORMAT_BYTES(pf)  (((pf) >> 16) & 7)
 
-#endif // ZIRCON_PIXELFORMAT_H_
+#endif // SYSROOT_ZIRCON_PIXELFORMAT_H_

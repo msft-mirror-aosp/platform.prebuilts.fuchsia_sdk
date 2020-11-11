@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_THREADS_H_
+#define SYSROOT_THREADS_H_
 
 #include <features.h>
 #include <time.h>
@@ -24,26 +25,26 @@ typedef void (*tss_dtor_t)(void*);
 #define TSS_DTOR_ITERATIONS 4
 
 enum {
-    thrd_success = 0,
-    thrd_busy = 1,
-    thrd_error = 2,
-    thrd_nomem = 3,
-    thrd_timedout = 4,
+  thrd_success = 0,
+  thrd_busy = 1,
+  thrd_error = 2,
+  thrd_nomem = 3,
+  thrd_timedout = 4,
 };
 
 // These are bitfield values; initialize with e.g. (mtx_plain|mtx_timed).
 // mtx_recursive is not implemented.
 enum {
-    mtx_plain = 0,
-    mtx_recursive = 1,
-    mtx_timed = 2,
+  mtx_plain = 0,
+  mtx_recursive = 1,
+  mtx_timed = 2,
 };
 
 #ifdef _ALL_SOURCE
 #define MTX_INIT \
-    {}
+  {}
 #define CND_INIT \
-    {}
+  {}
 #endif
 
 #define ONCE_FLAG_INIT 0
@@ -76,14 +77,14 @@ int mtx_lock(mtx_t* __m)
 #ifdef __clang__
     __attribute__((__acquire_capability__(__m)))
 #endif
-;
+    ;
 int mtx_timedlock(mtx_t* __restrict, const struct timespec* __restrict);
 int mtx_trylock(mtx_t*);
 int mtx_unlock(mtx_t* __m)
 #ifdef __clang__
     __attribute__((__release_capability__(__m)))
 #endif
-;
+    ;
 
 int cnd_init(cnd_t*);
 void cnd_destroy(cnd_t*);
@@ -103,3 +104,5 @@ void* tss_get(tss_t);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_THREADS_H_

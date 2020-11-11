@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_STDIO_H_
+#define SYSROOT_STDIO_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,8 +45,8 @@ extern "C" {
 #define L_tmpnam 20
 
 typedef union _G_fpos64_t {
-    char __opaque[16];
-    double __align;
+  char __opaque[16];
+  double __align;
 } fpos_t;
 
 extern FILE* const stdin;
@@ -180,3 +181,5 @@ int fputs_unlocked(const char*, FILE*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_STDIO_H_

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_SYS_SEM_H_
+#define SYSROOT_SYS_SEM_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,9 +13,9 @@ extern "C" {
 #ifdef _GNU_SOURCE
 #define __NEED_struct_timespec
 #endif
-#include <bits/alltypes.h>
-
 #include <sys/ipc.h>
+
+#include <bits/alltypes.h>
 
 #define SEM_UNDO 0x1000
 #define GETPID 11
@@ -35,22 +36,22 @@ extern "C" {
 #define SEM_INFO 19
 
 struct seminfo {
-    int semmap;
-    int semmni;
-    int semmns;
-    int semmnu;
-    int semmsl;
-    int semopm;
-    int semume;
-    int semusz;
-    int semvzx;
-    int semaem;
+  int semmap;
+  int semmni;
+  int semmns;
+  int semmnu;
+  int semmsl;
+  int semopm;
+  int semume;
+  int semusz;
+  int semvzx;
+  int semaem;
 };
 
 struct sembuf {
-    unsigned short sem_num;
-    short sem_op;
-    short sem_flg;
+  unsigned short sem_num;
+  short sem_op;
+  short sem_flg;
 };
 
 int semctl(int, int, int, ...);
@@ -64,3 +65,5 @@ int semtimedop(int, struct sembuf*, size_t, const struct timespec*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_SYS_SEM_H_

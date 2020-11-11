@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef SYSROOT_ZIRCON_SYSCALLS_PCI_H_
+#define SYSROOT_ZIRCON_SYSCALLS_PCI_H_
 
 #include <zircon/types.h>
 
@@ -32,7 +33,10 @@ typedef struct zx_pci_bar {
     size_t size;
     union {
         uintptr_t addr;
-        zx_handle_t handle;
+        struct {
+            zx_handle_t handle;
+            uint8_t padding1[4];
+        };
     };
 } zx_pci_bar_t;
 
@@ -50,6 +54,8 @@ typedef struct zx_pcie_device_info {
     uint8_t  bus_id;
     uint8_t  dev_id;
     uint8_t  func_id;
+
+    uint8_t  padding1;
 } zx_pcie_device_info_t;
 
 #define ZX_PCI_MAX_BUSSES (256u)
@@ -84,6 +90,10 @@ typedef uint32_t zx_pci_irq_swizzle_lut_t[ZX_PCI_MAX_DEVICES_PER_BUS]
                                          [ZX_PCI_MAX_FUNCTIONS_PER_DEVICE]
                                          [ZX_PCI_MAX_LEGACY_IRQ_PINS];
 
+// We support up to 224 IRQs on a system, this is the maximum supported by
+// LAPICs (today) so this should be a safe number.
+#define ZX_PCI_MAX_IRQS 224
+
 typedef struct zx_pci_init_arg {
     zx_pci_irq_swizzle_lut_t dev_pin_to_global_irq;
 
@@ -92,7 +102,8 @@ typedef struct zx_pci_init_arg {
         uint32_t global_irq;
         bool level_triggered;
         bool active_high;
-    } irqs[64];
+        uint8_t padding1[2];
+    } irqs[ZX_PCI_MAX_IRQS];
 
     uint32_t addr_window_count;
     struct {
@@ -102,6 +113,7 @@ typedef struct zx_pci_init_arg {
         uint8_t bus_end;
         uint8_t cfg_space_type;
         bool has_ecam;
+        uint8_t padding1[4];
     } addr_windows[];
 } zx_pci_init_arg_t;
 
@@ -118,3 +130,5 @@ typedef uint32_t zx_pci_irq_mode_t;
 #define ZX_PCIE_IRQ_MODE_MSI_X ((zx_pci_irq_mode_t) 3u)
 
 __END_CDECLS
+
+#endif  // SYSROOT_ZIRCON_SYSCALLS_PCI_H_

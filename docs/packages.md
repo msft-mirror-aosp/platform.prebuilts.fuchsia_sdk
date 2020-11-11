@@ -6,60 +6,156 @@ A package is the unit of installation on a Fuchsia system.
 
 _To be added..._
 
-## Building a package
+## Working with packages
 
-The majority of this process relies on a tool called `pm` which is available
-under `//tools`.
-This document describes the various steps to generate a package. For more
-details about each step, see `pm`'s help messages.
+The majority of these instructions rely on the `pm` tool which is available
+in `//tools`.
 
-The initial step is to create a manifest file `$MANIFEST_FILE` describing the
-contents of the package.
-The manifest is a mere list of lines of the form `destination=source`, where
-`source` is the path to the file on the host machine and `destination` the
-location of that file in the final package.
+This document describes the various steps to build and install a package:
 
-The manifest must include at least one line for the package identity file:
-```
-meta/package=path/to/generated/package.json
-```
-This identity file should contain the following data:
-```
-{
-  "name": "<package name",
-  "version": "<package version>"
-}
-```
-That file can be created using the `pm init` command.
+* [Build a package](#build-package)
+* [Publish a package](#publish-package)
+* [Install a package](#install-package)
+* [Run a component from an installed package](#run-component)
 
-From this point on, we are going to use `$PACKAGE_DIR` to denote a staging dir
-where the package is going to be built.
+For more details about each step, see `pm`'s help messages.
 
-First, we need to initialize the package with:
-```
-pm -o $PACKAGE_DIR -n $PACKAGE_NAME init
-```
+### Build a package {#build-package}
 
-In order to create the package, a signing key is required. You may provide your
-own key or generate one at `$SIGNING_KEY` with:
-```
-pm -o $PACKAGE_DIR -k $SIGNING_KEY genkey
-```
-_TODO: add more details about signing keys, possibly in pm's help_
+To build a package:
 
-The next step is to generate an archive with the package's metadata:
-```
-pm -o $PACKAGE_DIR -k $SIGNING_KEY -m $MANIFEST_FILE build
-```
-This will create the metadata archive at `$PACKAGE_DIR/meta.far`.
+1. Create the package ID file:
 
-Finally, we put it all together to generate the package itself:
-```
-pm -o $PACKAGE_DIR -k $SIGNING_KEY -m $MANIFEST_FILE archive
-```
-This will create the package archive at `$PACKAGE_DIR/$PACKAGE_NAME-0.far`.
-Note that this step needs to be re-run if the contents of the package change.
+   Note: `$PACKAGE_DIR` is a staging directory where the package
+   is built.
 
-## Deploying a package
+   ```
+   pm -o $PACKAGE_DIR -n $PACKAGE_NAME init
+   ```
 
-_To be added..._
+   This generates the package ID file implicitly as
+   `$PACKAGE_DIR/meta/package`.  Set `$PACKAGE_ID_FILE` accordingly
+   for use in subsequent steps:
+
+   ```
+   export PACKAGE_ID_FILE=${PACKAGE_DIR}/meta/package
+   ```
+
+   `$PACKAGE_ID_FILE` will contain the following data:
+
+   ```
+   {
+     "name": "<package name>",
+     "version": "<package version>"
+   }
+   ```
+
+2. Create the manifest file, `$MANIFEST_FILE`, that provides the path to
+   the package ID file.  Each line of a manifest file maps a single file that
+   is contained in the package and is in the form of `destination=source` where:
+
+   * `destination` is the path to the file in the final package
+   * `source` is the path to the file on the host machine
+
+   The manifest file must include at least one line for the package ID file like
+   this:
+
+   ```
+   meta/package=<package ID file>
+   ```
+
+3. Generate the package metadata archive:
+
+   ```
+   pm -o $PACKAGE_DIR -m $MANIFEST_FILE build
+   ```
+
+   This creates the metadata archive at `$PACKAGE_DIR/meta.far`.
+
+4. Create the package archive `$PACKAGE_ARCHIVE`:
+
+   ```
+   pm -o $PACKAGE_DIR -m $MANIFEST_FILE archive
+   ```
+
+   This command creates the package archive implicitly as
+   `$PACKAGE_DIR/$PACKAGE_NAME-0.far`.  Set `$PACKAGE_ARCHIVE` accordingly
+   for use in subsequent steps:
+
+   ```
+   export PACKAGE_ARCHIVE=${PACKAGE_DIR}/${PACKAGE_NAME}-0.far
+   ```
+
+   If the contents of the package change, you need to re-run the
+   `pm -o $PACKAGE_DIR -m $MANIFEST_FILE archive` command.
+
+You have successfully built a package. You are now ready to publish the package.
+
+### Publish a package {#publish-package}
+
+To publish a package:
+
+1. Initialize a directory, `$REPO`, that serves as a packages repository:
+
+   ```
+   pm newrepo -repo $REPO
+   ```
+
+   This creates a directory structure named `$REPO` that is ready for
+   publishing packages.
+
+2. Publish packages to the repository `$REPO`:
+
+   ```
+   pm publish -a -r $REPO -f $PACKAGE_ARCHIVE
+   ```
+
+   `pm publish` parses `$PACKAGE_ARCHIVE` and publishes the package in the
+   provided `$REPO` directory. If you run this command multiple times with
+   different package archives, `pm publish` publishes the packages to the same
+   repository. New versions of a same package can be published using the same
+   command.
+
+You have successfully published a package. You are now ready to install a
+package.
+
+### Install a package {#install-package}
+
+To install a package:
+
+1. Start the package server:
+
+   ```
+   pm serve -repo $REPO
+   ```
+
+   By default, this starts an amber server on the host machine at port `8083`.
+
+2. (On the target device) Add the new repository as an update source with
+   `amberctl`:
+
+   ```
+   amberctl add_repo_cfg -n $REPO -f http://$HOST_ADDRESS:8083/config.json
+   ```
+
+   If the component is not already on the system, `amberctl` installs the package.
+   If the package already exists, `amberctl` installs any package updates.
+
+You have successfully installed or updated the package. You are now ready to
+run a component from the installed package.
+
+### Run a component from an installed package {#run-component}
+
+To run a component published in a package:
+
+1. (On the target device) Run:
+
+  Note: `$COMPONENT_URI` is in this form
+  `fuchsia-pkg://${REPO}/${PACKAGE_NAME}#meta/<component name>.cmx`.
+
+  ```
+  run $COMPONENT_URI
+  ```
+
+You have successfully run a component from the installed package.
+

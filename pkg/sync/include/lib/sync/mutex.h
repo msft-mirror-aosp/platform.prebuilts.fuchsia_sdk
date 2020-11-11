@@ -15,16 +15,15 @@ __BEGIN_CDECLS
 // The |mutex_t| mutex in the standard library has several quirks in its design
 // that prevent it from being optimal. For example, the |mutex_t| interface
 // supports recursion, which adds a branch to |mutex_init| to check that the
-// client has not asked for recusion, and |mutex_timedlock| operates in
+// client has not asked for recursion, and |mutex_timedlock| operates in
 // |struct timespec| rather than |zx_time_t|.
 //
 // |sync_mutex| resolves these issues.
 typedef struct __TA_CAPABILITY("mutex") sync_mutex {
-    zx_futex_t futex;
+  zx_futex_t futex;
 
 #ifdef __cplusplus
-    sync_mutex()
-        : futex(0) {}
+  sync_mutex() : futex(0) {}
 #endif
 } sync_mutex_t;
 
@@ -41,7 +40,7 @@ void sync_mutex_lock(sync_mutex_t* mutex) __TA_ACQUIRE(mutex);
 
 // Locks the mutex and mark the mutex as having a waiter.
 //
-// Similar to |sync_mutex_lock| but markes the mutex as having a waiter. Intended
+// Similar to |sync_mutex_lock| but marks the mutex as having a waiter. Intended
 // to be used by the condition variable implementation.
 void sync_mutex_lock_with_waiter(sync_mutex_t* mutex) __TA_ACQUIRE(mutex);
 
@@ -69,4 +68,4 @@ void sync_mutex_unlock(sync_mutex_t* mutex) __TA_RELEASE(mutex);
 
 __END_CDECLS
 
-#endif // LIB_SYNC_MUTEX_H_
+#endif  // LIB_SYNC_MUTEX_H_

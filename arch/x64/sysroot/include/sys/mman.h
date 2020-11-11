@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SYSROOT_SYS_MMAN_H_
+#define SYSROOT_SYS_MMAN_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,7 @@ extern "C" {
 #define MAP_NONBLOCK 0x10000
 #define MAP_STACK 0x20000
 #define MAP_HUGETLB 0x40000
+#define MAP_JIT 0x80000
 #define MAP_FILE 0
 
 #define PROT_NONE 0
@@ -96,3 +98,5 @@ int shm_unlink(const char*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_SYS_MMAN_H_

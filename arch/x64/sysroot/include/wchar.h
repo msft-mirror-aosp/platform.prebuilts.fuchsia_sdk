@@ -1,10 +1,12 @@
-#pragma once
+#ifndef SYSROOT_WCHAR_H_
+#define SYSROOT_WCHAR_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <features.h>
+
 #include <bits/null.h>
 
 #define __NEED_FILE
@@ -32,13 +34,13 @@ extern "C" {
 #ifndef WCHAR_MIN
 #if defined(__WCHAR_MIN__)
 #define WCHAR_MIN __WCHAR_MIN__
-#else // defined(__WCHAR_MIN__)
+#else  // defined(__WCHAR_MIN__)
 #if defined(__WCHAR_UNSIGNED__)
 #define WCHAR_MIN (L'\0' + 0)
 #else
 #define WCHAR_MIN (-WCHAR_MAX - 1)
-#endif // defined (__WCHAR_UNSIGNED)
-#endif // defined(__WCHAR_MIN__)
+#endif  // defined (__WCHAR_UNSIGNED)
+#endif  // defined(__WCHAR_MIN__)
 #endif
 
 #undef WEOF
@@ -179,3 +181,5 @@ wctype_t wctype(const char*);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SYSROOT_WCHAR_H_
